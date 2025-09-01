@@ -4,69 +4,90 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
+    container_name: sharing_caring_db
     environment:
-      POSTGRES_DB: sharing_platform
+      POSTGRES_DB: sharing_caring
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: postgres123
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
-  # Redis Cache
-  redis:
-    image: redis:7-alpine
+  # Valkey Cache & Streams (Redis-compatible)
+  valkey:
+    image: valkey/valkey:7.2-alpine
+    container_name: sharing_caring_valkey
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
-      - redis_data:/data
+      - valkey_data:/data
+      - ./valkey.conf:/usr/local/etc/valkey/valkey.conf:ro
+    command: ["valkey-server", "/usr/local/etc/valkey/valkey.conf"]
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "valkey-cli", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
+    restart: unless-stopped
 
-  # FastAPI Application
-  api:
+  # Telegram Bot Application
+  bot:
     build: .
+    container_name: sharing_caring_bot
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres123@postgres:5432/sharing_caring
+      - REDIS_URL=redis://valkey:6379/0
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - SECRET_KEY=${SECRET_KEY}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - ENVIRONMENT=production
+      - STORAGE_TYPE=local
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    command: ["python", "-m", "src.bot.main"]
+    restart: unless-stopped
+
+  # FastAPI Web Interface (optional - for admin dashboard)
+  web:
+    build: .
+    container_name: sharing_caring_web
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/sharing_platform
-      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres123@postgres:5432/sharing_caring
+      - REDIS_URL=redis://valkey:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+      - ENVIRONMENT=production
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
+      valkey:
         condition: service_healthy
-    volumes:
-      - .:/app
-    command: ["python", "run_dev.py"]
-
-  # Telegram Bot (optional)
-  bot:
-    build: .
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/sharing_platform
-      - REDIS_URL=redis://redis:6379/0
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    volumes:
-      - .:/app
-    command: ["python", "run_bot.py"]
+    command: ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    restart: unless-stopped
     profiles:
-      - bot
+      - web
 
 volumes:
   postgres_data:
-  redis_data:
+  valkey_data:

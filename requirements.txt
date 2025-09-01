@@ -9,9 +9,10 @@ sqlalchemy==2.0.23
 asyncpg==0.29.0
 alembic==1.13.1
 
-# Redis
-redis==5.0.1
-hiredis==2.2.3
+# Valkey/Redis with Streams support
+redis==5.0.1  # Redis client works with Valkey
+hiredis==2.2.3  # High-performance Redis parser
+redis-om==0.2.1  # Object mapping with stream support
 
 # Telegram Bot
 python-telegram-bot==20.7
@@ -34,6 +35,8 @@ boto3==1.34.0
 python-dotenv==1.0.0
 structlog==23.2.0
 click==8.1.7
+asyncio-throttle==1.0.2  # Rate limiting for stream processing
+python-json-logger==2.0.7  # Structured logging for events
 
 # Development
 pytest==7.4.3

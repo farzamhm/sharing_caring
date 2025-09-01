@@ -1,46 +1,69 @@
-# 🏠 Neighborhood Food Sharing Platform
+# 🏠 Dual-Mode Food Sharing Platform
 
-A Telegram bot-based platform for neighborhood food sharing built with Python, FastAPI, and PostgreSQL. Connect with neighbors to reduce food waste and build community.
+A sophisticated Telegram bot platform supporting both neighborhood-based and community-based food sharing. Built with Python, FastAPI, PostgreSQL, and Valkey streams for real-time event processing. Transform your community through smart food sharing with global reputation tracking.
 
 ![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104.1-green.svg)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-blue.svg)
-![Redis](https://img.shields.io/badge/Redis-7+-red.svg)
+![Valkey](https://img.shields.io/badge/Valkey-7.2+-red.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Epic Stories](https://img.shields.io/badge/Epic%20Stories-10-green.svg)
+![User Stories](https://img.shields.io/badge/User%20Stories-58-blue.svg)
 
 ## 🌟 Features
 
+### 🎯 Dual-Mode Architecture
+- **🏠 Neighborhood Mode**: High-verification building-based sharing with SMS + address verification
+- **👥 Community Mode**: Social-based sharing through Telegram groups with light verification
+- **🔄 Flexible Switching**: Users can change modes with appropriate re-verification
+- **🌐 Mode Isolation**: Complete separation between neighborhood and community interactions
+
+### 🏆 Global Reputation System
+- **⭐ Cross-Group Reputation**: Reputation follows users across all groups and modes
+- **🎖️ Trust Levels**: Developing → Established → Trusted → Exemplary progression  
+- **💎 Reputation-Based Privileges**: Premium features unlock based on trust level
+- **🔧 Rehabilitation Programs**: Clear paths for users to improve declining reputation
+
+### 💰 Advanced Credit Economy  
+- **📈 Dynamic Earning**: Higher reputation users earn bonus credits
+- **💸 Reputation Discounts**: Trust-based discounts on food claiming
+- **🎁 Credit Gifting**: High-reputation users can gift credits to others
+- **🛡️ Spending Controls**: Reputation-based limits prevent abuse
+
 ### Core Functionality
 - **🍕 Food Sharing**: Post surplus food items with photos, descriptions, and pickup times
-- **🔍 Smart Discovery**: Browse available food with filters for dietary restrictions and allergens
+- **🔍 Smart Discovery**: Browse available food with filters for dietary restrictions and allergens  
 - **🤝 Exchange Coordination**: Claim food and coordinate pickups with built-in messaging
-- **💰 Credit System**: Fair sharing with credits - earn by sharing, spend by claiming
+- **🤝 Inter-Group Partnerships**: Groups can partner to expand food sharing networks
 - **📱 Telegram Integration**: Full bot interface for easy access via Telegram
-- **🏢 Building Management**: Organize users by apartment buildings for local sharing
 
-### Technical Features
+### 🏗️ Advanced Technical Features
+- **Event-Driven Architecture**: Valkey streams for real-time event processing
 - **FastAPI Backend**: Modern async Python web framework with automatic API documentation
-- **PostgreSQL Database**: Robust data storage with SQLAlchemy ORM
-- **Redis Caching**: Fast session management and rate limiting
-- **Photo Processing**: Automatic image compression and thumbnail generation
-- **Admin Dashboard**: Web-based monitoring and management interface
+- **PostgreSQL Database**: Optimized with performance indexes and materialized views
+- **Global Reputation Engine**: Real-time cross-group reputation calculation
+- **Advanced Admin Tools**: Group management, dispute resolution, automated monitoring
+- **Privacy-First Design**: GDPR compliance with granular privacy controls
+- **Predictive Analytics**: User behavior analysis and churn prevention
+- **Auto-Scaling Infrastructure**: Kubernetes-ready with performance monitoring
 - **Comprehensive Testing**: 80%+ code coverage with unit and integration tests
-- **Docker Support**: Easy deployment with Docker Compose
+- **Docker Support**: Multi-container deployment with Valkey, PostgreSQL, and web services
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Python 3.11+
 - PostgreSQL 15+
-- Redis 7+
+- Valkey 7.2+ (or Redis 7+ with streams support)
 - Telegram Bot Token (from [@BotFather](https://t.me/botfather))
+- Docker & Docker Compose (recommended)
 
 ### Installation
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/neighborhood-food-sharing.git
-cd neighborhood-food-sharing
+git clone https://github.com/farzamhm/sharing_caring.git
+cd sharing_caring
 ```
 
 2. **Set up virtual environment**
@@ -58,25 +81,32 @@ cp .env.example .env
 
 4. **Set up database**
 ```bash
-createdb sharing_platform
+createdb sharing_caring
 alembic upgrade head
 ```
 
 5. **Run the application**
 ```bash
-python run_dev.py
+python -m src.bot.main
 ```
 
-The API will be available at http://localhost:8000
+The Telegram bot will start and be ready to receive messages.
 
-## 🐳 Docker Deployment
+## 🐳 Docker Deployment (Recommended)
 
 ```bash
-# Start all services
+# Create environment file
+cp .env.example .env
+# Edit .env with your TELEGRAM_BOT_TOKEN and other settings
+
+# Start all services (bot, database, valkey)
 docker-compose up -d
 
 # View logs
 docker-compose logs -f
+
+# Start with web dashboard (optional)
+docker-compose --profile web up -d
 
 # Stop services
 docker-compose down
@@ -88,18 +118,22 @@ docker-compose down
 ├── src/
 │   ├── api/          # FastAPI endpoints and routers
 │   ├── bot/          # Telegram bot handlers
-│   ├── core/         # Core utilities (database, redis, config)
+│   ├── core/         # Core utilities (database, valkey, config)
 │   ├── models/       # SQLAlchemy database models
 │   ├── services/     # Business logic layer
 │   └── templates/    # HTML templates
+├── docs/
+│   └── product/      # Product documentation
+│       ├── epics/    # 10 comprehensive epic specifications
+│       └── stories/  # 58 user stories with acceptance criteria
 ├── tests/            # Test suite
 │   ├── unit/         # Unit tests
 │   ├── integration/  # Integration tests
 │   └── fixtures/     # Test data
 ├── alembic/          # Database migrations
-├── docker/           # Docker configuration
-├── scripts/          # Utility scripts
-└── docs/             # Documentation
+├── valkey.conf       # Valkey configuration for streams
+├── docker-compose.yml # Multi-container deployment
+└── requirements.txt  # Python dependencies with streams support
 ```
 
 ## 🔧 Configuration
@@ -115,10 +149,10 @@ DEBUG=true
 LOG_LEVEL=DEBUG
 
 # Database
-DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/sharing_platform
+DATABASE_URL=postgresql+asyncpg://postgres:postgres123@localhost:5433/sharing_caring
 
-# Redis
-REDIS_URL=redis://localhost:6379/0
+# Valkey (Redis-compatible with streams)
+REDIS_URL=redis://localhost:6380/0
 
 # Telegram
 TELEGRAM_BOT_TOKEN=your-bot-token-here
@@ -161,22 +195,34 @@ pytest tests/unit/test_food_service.py
 
 ## 📱 Telegram Bot Commands
 
-- `/start` - Register and get started
-- `/share` - Post new food item
-- `/browse` - Browse available food
-- `/my_posts` - View your food posts
-- `/exchanges` - View your exchanges
-- `/balance` - Check credit balance
-- `/help` - Get help
+### 🆕 Dual-Mode Commands
+- `/start` - Register and choose your sharing mode (Neighborhood/Community)
+- Mode selection with smart onboarding based on your community type
 
-## 🛡️ Admin Features
+### 🍕 Food Sharing Commands  
+- `/share` - Post new food item with photos and pickup details
+- `/browse` - Browse available food with filtering options
+- `/my_posts` - View and manage your active food posts
+- `/exchanges` - Track your food exchange history and status
 
-### Web Dashboard
-- Platform statistics and metrics
-- User management
-- Exchange monitoring
-- System health checks
-- Intervention tools
+### 💰 Credits & Reputation
+- `/credits` - Check credit balance and transaction history
+- `/profile` - View reputation, trust level, and achievements
+- `/help` - Get help and feature tutorials
+
+## 🛡️ Advanced Admin Features
+
+### 👥 Group Admin Dashboard  
+- **Community Health Monitoring**: Real-time group activity and member engagement
+- **Member Management Tools**: Warnings, restrictions, reputation boosts, removal
+- **Content Moderation**: Food post review, content flagging, dispute resolution
+- **Partnership Management**: Inter-group partnership requests and analytics
+
+### 🏛️ Platform Admin Dashboard
+- **Global Analytics**: Cross-platform metrics and business intelligence
+- **Reputation System Oversight**: Trust level distribution and manipulation detection  
+- **Automated Monitoring**: Smart alerts for spam, fraud, and safety concerns
+- **Economic Balance Management**: Credit circulation and reputation-economy health
 
 ### CLI Tools
 ```bash
